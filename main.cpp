@@ -88,7 +88,9 @@ int main() {
 
       //prolly sumn wrong with this if statement
       if(label_object_to_classify[i] == nearest_neighbor_label) {
+        cout << label_object_to_classify[i] << " AND " << nearest_neighbor_label << endl;
         number_correctly_classified++;
+
       }
 
       // cout << "Object " << i << " is class " << label_object_to_classify[i-1];
