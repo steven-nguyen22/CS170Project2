@@ -14,200 +14,6 @@
 
 using namespace std;
 
-double calculate_distance(vector<double> p, vector<double> q, int i, int k) {
-  double distance = 0;
-
-  //distance = sqrt((q1-p1)^2 + (q2-p2)^2 + ...)
-  //we want to compare the 10 features of 1 to the 10 features of 2,3, etc...
-  //we want 10-19 minus 0-9
-  //need to change k=1 to 10-19
-  //need to change i=0 to 0-9
-  k += 9;
-  for(int x=0; x<10; x++) {
-    distance += pow( q[k] - p[i], 2);
-    k++;
-    i++;
-  }
-  return sqrt(distance);
-}
-
-void loadData (vector<vector<double>> &testData, int choice) {
-  string fileName = "";
-  if(choice == 1) {
-    fileName = "CS170_Spring_2022_Small_data__146.txt";
-  }
-  else {
-    fileName = "CS170_Spring_2022_Large_data__146.txt";
-  }
-
-  fstream myFile;
-    myFile.open(fileName, ios::in);
-    if(myFile.is_open()) {
-      string line;
-      while(getline(myFile, line)) {
-        string s;
-        vector<double> temp;
-        stringstream iss(line);
-        while(iss >> s) {
-          temp.push_back(stod(s));
-        }
-        testData.push_back(temp);
-        temp.clear();
-        // cout << line << endl;
-      }
-      myFile.close();
-    }
-}
-
-
-void modifyData(vector<double> &temp, vector<int> current_set, vector<int> feature_to_add) {
-  //1. combine vectors and sort them in order
-  //2. invert the vectors
-  //3. change columns to 0 according  to inverted vector
-
-  //combining current set and feature to add
-  vector<int> combine_vector(current_set.size() + feature_to_add.size());
-  merge(current_set.begin(), current_set.end(), feature_to_add.begin(), feature_to_add.end(), combine_vector.begin());
-
-  //sorting them
-  sort(combine_vector.begin(), combine_vector.end());
-
-  //making the inverted vector
-  vector<int> inverted_vec;
-  bool located_in = false;
-
-  //inverted vector using 10 features
-  for(int x=1; x<11; x++) {
-    for(int i=0; i<combine_vector.size(); i++) {
-      if(x == combine_vector[i]) {
-        located_in = true;
-      }
-    }
-
-    if(located_in == false) {
-      inverted_vec.push_back(x);
-    }
-    located_in = false;
-  }
-
-  // for(auto x : inverted_vec) {
-  //   cout << x << " ";
-  // }
-
-
-  //looping through each value in inverted_vec
-  for(int i=0; i<inverted_vec.size(); i++) {
-    // cout << inverted_vec[i] << " ";
-    
-    // cout << i << " ";
-    int change=0;
-    
-    temp[inverted_vec[i]-1] =0;
-    // cout << inverted_vec[i]-1 << " ";
-    //looping through vector of features (temp)
-    for(int x=inverted_vec[i]-1; x<temp.size(); x++) {
-      //every 10th item make 0 
-      if(change == 10) {
-        temp[x]=0;
-        change=0;
-        // cout << x << " ";
-      }
-      change++;
-    }
-  }
-
-  int change = 0;
-  for(int i=0; i<temp.size(); i++) {
-      cout << temp[i] << " ";
-      change++;
-      if(change == 10) {
-        cout << endl;
-        change=0;
-      }
-    }
-
-}
-
-double getAccuracy(vector<vector<double>> testData) {
-    vector<double> object_to_classify; //vector of features
-    vector<double> label_object_to_classify; //vector of class labels 
-    vector<double> temp; //copy features here, make modifications, change back to og, repeat 
-
-    //loops to get our vectors
-    for(int row=0; row<testData.size(); row++) {
-      label_object_to_classify.push_back(testData[row][0]);
-      for(int col=1; col<testData[row].size(); col++) {
-        object_to_classify.push_back(testData[row][col]);
-        temp.push_back(testData[row][col]); //test
-      }
-    }
-    cout<<"im here\n";
-    vector<int> z = {1,4,7}; //make these 2 vectors into parameters
-    vector<int> y = {10};
-    modifyData(temp, z, y);
-
-    cout<<"imhere 2\n";
-
-    int number_correctly_classified = 0;
-
-    //going over the rows of the dataset
-    for(int i=1; i<testData.size(); i++) {
-      double nearest_neighbor_distance = DBL_MAX;
-      int nearest_neighbor_location = INT_MAX;
-      double nearest_neighbor_label = 0;
-
-      //nearest neighbor with 
-      for(int k=1; k<testData.size(); k++) {
-        //don't compare with itself
-        if(k != i) {
-          // cout << "Ask if " << i << " is nearest neighbors with " << k << endl;
-          double euclidian_distance = calculate_distance(object_to_classify, object_to_classify, i-1, k-1);
-
-          if(euclidian_distance < nearest_neighbor_distance) {
-            nearest_neighbor_distance = euclidian_distance;
-            nearest_neighbor_location = k;
-            nearest_neighbor_label = label_object_to_classify[k];
-            // cout << nearest_neighbor_distance << endl;
-          }
-        }
-      }
-
-      //prolly sumn wrong with this if statement
-
-      //checks to see if the class of the object to classify is the same class as its nearest neighbor
-      if(label_object_to_classify[i-1] == nearest_neighbor_label) {
-        // cout << label_object_to_classify[i] << " AND " << nearest_neighbor_label << endl;
-        // cout << number_correctly_classified << endl;
-        number_correctly_classified++;
-
-      }
-
-      // cout << "Object " << i << " is class " << label_object_to_classify[i-1];
-      // cout << endl << "Its nearest neighbor is " << nearest_neighbor_location << " which is in class " << nearest_neighbor_label << endl;
-
-    }
-
-    double accuracy = (number_correctly_classified * 1.0) / testData.size();
-
-
-    // only 70 of them are right but i got 77% accuracy 
-    cout << "test data size: " << testData.size();
- 
-    cout << "number correct classify: " << number_correctly_classified;
-
-    cout << "accuracy is: " << accuracy;
-
-    // for(auto x : label_object_to_classify) {
-    //   cout << x << endl;
-    // }
-
-    // for(auto x : object_to_classify) {
-    //   cout << x << endl;
-    // }
-
-    return accuracy;
-}
-
 int main() {
     srand (time(NULL)); //seeding random time
 
@@ -233,8 +39,8 @@ int main() {
 
     loadData(testData, dataChoice);
 
-    int temp = getAccuracy(testData);
-    cout << temp << endl;
+    // int temp = getAccuracy(testData);
+    // cout << temp << endl;
 
     //choosing which type of search algorithm to apply to the puzzle
     cout << "\nEnter your choice of algorithm\n";
@@ -244,10 +50,10 @@ int main() {
     int algorithm; 
     cin >> algorithm;
     if(algorithm == 1) {
-      forward_selection(featureChoice);
+      forward_selection(testData, featureChoice);
     }
     if(algorithm == 2) {
-       backward_selection(featureChoice);
+       backward_selection(testData, featureChoice);
     }
     // if(algorithm == 3) {
         
