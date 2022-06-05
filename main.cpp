@@ -8,6 +8,7 @@
 #include <sstream>
 #include <cmath>
 #include <float.h>
+#include <algorithm>
 
 #include "searchAlgorithms.cpp"
 
@@ -30,13 +31,17 @@ double calculate_distance(vector<double> p, vector<double> q, int i, int k) {
   return sqrt(distance);
 }
 
-int main() {
-    srand (time(NULL)); //seeding random time
+void loadData (vector<vector<double>> &testData, int choice) {
+  string fileName = "";
+  if(choice == 1) {
+    fileName = "CS170_Spring_2022_Small_data__146.txt";
+  }
+  else {
+    fileName = "CS170_Spring_2022_Large_data__146.txt";
+  }
 
-    vector<vector<double>> testData;
-
-    fstream myFile;
-    myFile.open("CS170_Spring_2022_Small_data__146.txt", ios::in);
+  fstream myFile;
+    myFile.open(fileName, ios::in);
     if(myFile.is_open()) {
       string line;
       while(getline(myFile, line)) {
@@ -52,31 +57,112 @@ int main() {
       }
       myFile.close();
     }
+}
 
-    vector<double> object_to_classify;
-    vector<double> label_object_to_classify;
+
+void modifyData(vector<double> &temp, vector<int> current_set, vector<int> feature_to_add) {
+  //1. combine vectors and sort them in order
+  //2. invert the vectors
+  //3. change columns to 0 according  to inverted vector
+
+  //combining current set and feature to add
+  vector<int> combine_vector(current_set.size() + feature_to_add.size());
+  merge(current_set.begin(), current_set.end(), feature_to_add.begin(), feature_to_add.end(), combine_vector.begin());
+
+  //sorting them
+  sort(combine_vector.begin(), combine_vector.end());
+
+  //making the inverted vector
+  vector<int> inverted_vec;
+  bool located_in = false;
+
+  //inverted vector using 10 features
+  for(int x=1; x<11; x++) {
+    for(int i=0; i<combine_vector.size(); i++) {
+      if(x == combine_vector[i]) {
+        located_in = true;
+      }
+    }
+
+    if(located_in == false) {
+      inverted_vec.push_back(x);
+    }
+    located_in = false;
+  }
+
+  // for(auto x : inverted_vec) {
+  //   cout << x << " ";
+  // }
+
+
+  //looping through each value in inverted_vec
+  for(int i=0; i<inverted_vec.size(); i++) {
+    // cout << inverted_vec[i] << " ";
+    
+    // cout << i << " ";
+    int change=0;
+    
+    temp[inverted_vec[i]-1] =0;
+    // cout << inverted_vec[i]-1 << " ";
+    //looping through vector of features (temp)
+    for(int x=inverted_vec[i]-1; x<temp.size(); x++) {
+      //every 10th item make 0 
+      if(change == 10) {
+        temp[x]=0;
+        change=0;
+        // cout << x << " ";
+      }
+      change++;
+    }
+  }
+
+  int change = 0;
+  for(int i=0; i<temp.size(); i++) {
+      cout << temp[i] << " ";
+      change++;
+      if(change == 10) {
+        cout << endl;
+        change=0;
+      }
+    }
+
+}
+
+double getAccuracy(vector<vector<double>> testData) {
+    vector<double> object_to_classify; //vector of features
+    vector<double> label_object_to_classify; //vector of class labels 
+    vector<double> temp; //copy features here, make modifications, change back to og, repeat 
 
     //loops to get our vectors
     for(int row=0; row<testData.size(); row++) {
       label_object_to_classify.push_back(testData[row][0]);
       for(int col=1; col<testData[row].size(); col++) {
         object_to_classify.push_back(testData[row][col]);
+        temp.push_back(testData[row][col]); //test
       }
     }
+    cout<<"im here\n";
+    vector<int> z = {1,4,7}; //make these 2 vectors into parameters
+    vector<int> y = {10};
+    modifyData(temp, z, y);
+
+    cout<<"imhere 2\n";
 
     int number_correctly_classified = 0;
 
+    //going over the rows of the dataset
     for(int i=1; i<testData.size(); i++) {
       double nearest_neighbor_distance = DBL_MAX;
       int nearest_neighbor_location = INT_MAX;
       double nearest_neighbor_label = 0;
 
+      //nearest neighbor with 
       for(int k=1; k<testData.size(); k++) {
+        //don't compare with itself
         if(k != i) {
           // cout << "Ask if " << i << " is nearest neighbors with " << k << endl;
           double euclidian_distance = calculate_distance(object_to_classify, object_to_classify, i-1, k-1);
 
-          //don't compare with itself
           if(euclidian_distance < nearest_neighbor_distance) {
             nearest_neighbor_distance = euclidian_distance;
             nearest_neighbor_location = k;
@@ -87,8 +173,11 @@ int main() {
       }
 
       //prolly sumn wrong with this if statement
-      if(label_object_to_classify[i] == nearest_neighbor_label) {
-        cout << label_object_to_classify[i] << " AND " << nearest_neighbor_label << endl;
+
+      //checks to see if the class of the object to classify is the same class as its nearest neighbor
+      if(label_object_to_classify[i-1] == nearest_neighbor_label) {
+        // cout << label_object_to_classify[i] << " AND " << nearest_neighbor_label << endl;
+        // cout << number_correctly_classified << endl;
         number_correctly_classified++;
 
       }
@@ -101,16 +190,12 @@ int main() {
     double accuracy = (number_correctly_classified * 1.0) / testData.size();
 
 
-    //only 70 of them are right but i got 77% accuracy 
+    // only 70 of them are right but i got 77% accuracy 
     cout << "test data size: " << testData.size();
-
+ 
     cout << "number correct classify: " << number_correctly_classified;
 
     cout << "accuracy is: " << accuracy;
-
-    // return accuracy
-    // should all be in a function
-
 
     // for(auto x : label_object_to_classify) {
     //   cout << x << endl;
@@ -120,31 +205,53 @@ int main() {
     //   cout << x << endl;
     // }
 
+    return accuracy;
+}
 
-    // //menu for the program
-    // cout << "Welcome to Steven Nguyen's Feature Selection Algorithm.\n\n";
-    // cout << "Please enter the total number of features: ";
-    // int featureChoice;
-    // cin >> featureChoice;
-    // cin.ignore();
+int main() {
+    srand (time(NULL)); //seeding random time
 
+    vector<vector<double>> testData;
 
-    // //choosing which type of search algorithm to apply to the puzzle
-    // cout << "\nEnter your choice of algorithm\n";
-    // cout << "1. Forward Selection\n";
-    // cout << "2. Backward Elimination\n";
-    // // cout << "3. My algorithm\n";
-    // int algorithm; 
-    // cin >> algorithm;
-    // if(algorithm == 1) {
-    //   forward_selection(featureChoice);
-    // }
-    // if(algorithm == 2) {
-    //    backward_selection(featureChoice);
-    // }
-    // // if(algorithm == 3) {
+    // vector<int> v1 = {1, 3, 5, 7};
+    // vector<int> v2 = {8, 6, 4, 2};
+    // modifyData(v1, v2);
+
+    //menu for the program
+    cout << "Welcome to Steven Nguyen's Feature Selection Algorithm.\n\n";
+    cout << "Please enter the total number of features: ";
+    int featureChoice;
+    cin >> featureChoice;
+    cin.ignore();
+
+    cout << "Please select a dataset: \n";
+    cout << "1. Small Dataset\n";
+    cout << "2. Large Dataset\n";
+    int dataChoice;
+    cin >> dataChoice;
+    cin.ignore();
+
+    loadData(testData, dataChoice);
+
+    int temp = getAccuracy(testData);
+    cout << temp << endl;
+
+    //choosing which type of search algorithm to apply to the puzzle
+    cout << "\nEnter your choice of algorithm\n";
+    cout << "1. Forward Selection\n";
+    cout << "2. Backward Elimination\n";
+    // cout << "3. My algorithm\n";
+    int algorithm; 
+    cin >> algorithm;
+    if(algorithm == 1) {
+      forward_selection(featureChoice);
+    }
+    if(algorithm == 2) {
+       backward_selection(featureChoice);
+    }
+    // if(algorithm == 3) {
         
-    // // }
+    // }
 
     return 0;
 }
