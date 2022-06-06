@@ -42,11 +42,16 @@ double calculate_distance(vector<double> p, vector<double> q, int i, int k) {
 void loadData (vector<vector<double>> &testData, int choice) {
   string fileName = "";
   if(choice == 1) {
-    // fileName = "CS170_Spring_2022_Small_data__146.txt";
+    fileName = "CS170_Spring_2022_Small_data__146.txt";
+  }
+  else if(choice == 2){
+    fileName = "CS170_Spring_2022_Large_data__146.txt";
+  }
+  else if(choice == 3){
     fileName = "small-test-dataset.txt";
   }
-  else {
-    fileName = "CS170_Spring_2022_Large_data__146.txt";
+  else if(choice == 4){
+    fileName = "Large-test-dataset.txt";
   }
 
   fstream myFile;
@@ -85,6 +90,11 @@ void modifyData(vector<double> &temp, vector<int> current_set, vector<int> featu
   vector<int> inverted_vec;
   bool located_in = false;
 
+  // cout << "combine vec is: ";
+  // for(auto x : combine_vector) {
+  //   cout << x << " ";
+  // }
+
   //inverted vector using 10 features
   for(int x=1; x<11; x++) {
     for(int i=0; i<combine_vector.size(); i++) {
@@ -99,6 +109,7 @@ void modifyData(vector<double> &temp, vector<int> current_set, vector<int> featu
     located_in = false;
   }
 
+  // cout << "inverted vec is: ";
   // for(auto x : inverted_vec) {
   //   cout << x << " ";
   // }
@@ -125,15 +136,15 @@ void modifyData(vector<double> &temp, vector<int> current_set, vector<int> featu
     }
   }
 
-//   int change = 0;
-//   for(int i=0; i<temp.size(); i++) {
-//       cout << temp[i] << " ";
-//       change++;
-//       if(change == 10) {
-//         cout << endl;
-//         change=0;
-//       }
-//     }
+  // int change = 0;
+  // for(int i=0; i<temp.size(); i++) {
+  //     cout << temp[i] << " ";
+  //     change++;
+  //     if(change == 10) {
+  //       cout << endl;
+  //       change=0;
+  //     }
+  //   }
 
 }
 
@@ -150,36 +161,41 @@ double getAccuracy(vector<vector<double>> testData, vector<int> current_set, vec
         temp.push_back(testData[row][col]); //test
       }
     }
-    // cout<<"im here\n";
+
+    // cout << "num features: " << object_to_classify.size() << endl;
+    // cout << "num instances: " << label_object_to_classify.size() << endl;
+  
     // vector<int> z = {1,4,7}; //make these 2 vectors into parameters
     // vector<int> y = {10};
     modifyData(temp, current_set, feature_to_add);
 
-    // cout<<"imhere 2\n";
-
     int number_correctly_classified = 0;
-
+    
     //going over the rows of the dataset
-    for(int i=1; i<testData.size(); i++) {
+    for(int i=1; i<label_object_to_classify.size(); i++) {
       double nearest_neighbor_distance = DBL_MAX;
       int nearest_neighbor_location = INT_MAX;
       double nearest_neighbor_label = 0;
 
       //nearest neighbor with 
-      for(int k=1; k<testData.size(); k++) {
+      for(int k=1; k<label_object_to_classify.size(); k++) {
         //don't compare with itself
         if(k != i) {
           // cout << "Ask if " << i << " is nearest neighbors with " << k << endl;
           double euclidian_distance = calculate_distance(temp, temp, i-1, k-1);
+          // cout << "Ask if " << i << " is nearest neighbor with " << k << "has euclid distance: " << euclidian_distance << endl;
 
           if(euclidian_distance < nearest_neighbor_distance) {
             nearest_neighbor_distance = euclidian_distance;
             nearest_neighbor_location = k;
+            //k-1 maybe
             nearest_neighbor_label = label_object_to_classify[k];
             // cout << nearest_neighbor_distance << endl;
           }
         }
       }
+
+      // cout << "nearest neighbor distance is: " << nearest_neighbor_distance << endl;
 
       //checks to see if the class of the object to classify is the same class as its nearest neighbor
       if(label_object_to_classify[i-1] == nearest_neighbor_label) {
@@ -192,27 +208,27 @@ double getAccuracy(vector<vector<double>> testData, vector<int> current_set, vec
       // cout << "Object " << i << " is class " << label_object_to_classify[i-1];
       // cout << endl << "Its nearest neighbor is " << nearest_neighbor_location << " which is in class " << nearest_neighbor_label << endl;
       temp = object_to_classify;
+       
     }
 
     double accuracy = (number_correctly_classified * 1.0) / testData.size();
+    return accuracy;  
 
-
-    // only 70 of them are right but i got 77% accuracy 
     // cout << "test data size: " << testData.size();
  
     // cout << "number correct classify: " << number_correctly_classified;
 
     // cout << "accuracy is: " << accuracy;
 
-    // for(auto x : label_object_to_classify) {
-    //   cout << x << endl;
-    // }
+    // // for(auto x : label_object_to_classify) {
+    // //   cout << x << endl;
+    // // }
 
-    // for(auto x : object_to_classify) {
-    //   cout << x << endl;
-    // }
+    // // for(auto x : object_to_classify) {
+    // //   cout << x << endl;
+    // // }
 
-    return accuracy;
+    // return accuracy;
 }
 
 //checking if value is already added to current set of features 
@@ -228,6 +244,8 @@ bool checker(vector<int> mySet, int val) {
 
 void forward_selection(vector<vector<double>> testData, int numFeatures) {
     vector<int> current_set_of_features;
+    int best_accuracy = 0;
+    vector<int> best_features;
 
     //for loop for levels
 	for(int i=1; i<numFeatures+1; i++) {
@@ -239,7 +257,11 @@ void forward_selection(vector<vector<double>> testData, int numFeatures) {
 		for(int k=1; k<numFeatures+1; k++) {
             //if statement to add only if it hasn't been added already
             if(checker(current_set_of_features, k)) {
-                double accuracy = getAccuracy(testData, current_set_of_features, feature_to_add_at_this_level);
+                vector<int> temp;
+                temp.push_back(k);
+                // double accuracy = getAccuracy(testData, current_set_of_features, temp);
+                temp.pop_back();
+                double accuracy = random_num();
                 cout << "--Consider adding feature " << k << " with accuracy = " << accuracy << endl;
 
                 //checking for highest accuracy of the level
@@ -253,8 +275,26 @@ void forward_selection(vector<vector<double>> testData, int numFeatures) {
 
         //add value with highest accuracy to current set of features
         current_set_of_features.push_back(feature_to_add_at_this_level.back());
-        cout << "On level " << i << " I added feature " << feature_to_add_at_this_level.back() << " to the current set\n";
+        cout << "On level " << i << " I added feature " << feature_to_add_at_this_level.back() << " to the current set, with accuracy: " << best_so_far_accuracy << endl;
+
+        if(best_so_far_accuracy > best_accuracy) {
+          best_accuracy = best_so_far_accuracy;
+          best_features = current_set_of_features;
+        }
+
+        cout << "Current set is: {";
+        for(auto x : current_set_of_features) {
+          cout << x << ",";
+        }
+        cout << "}\n";
 	}
+
+  cout << "\nThe best feature subset is: {";
+        for(auto x : best_features) {
+          cout << x << ",";
+        }
+        cout << "}\n";
+  cout << "The best accuracy found was: " << best_accuracy;
 }
 
 void backward_selection(vector<vector<double>> testData, int numFeatures) {

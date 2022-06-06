@@ -31,8 +31,10 @@ int main() {
     cin.ignore();
 
     cout << "Please select a dataset: \n";
-    cout << "1. Small Dataset\n";
-    cout << "2. Large Dataset\n";
+    cout << "1. Personal Small Dataset\n";
+    cout << "2. Personal Large Dataset\n";
+    cout << "3. General Small Dataset\n";
+    cout << "4. General Large Dataset\n";
     int dataChoice;
     cin >> dataChoice;
     cin.ignore();
